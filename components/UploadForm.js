@@ -1,33 +1,65 @@
-"use client"
-import React, { useRef, useState } from 'react'
-import PhotoCard from './PhotoCard';
+"use client";
+import React, { useRef, useState } from "react";
+import PhotoCard from "./PhotoCard";
+import ButtonSubmit from "./ButtonSubmit";
+import toast from "react-hot-toast";
+import { uploadPhoto } from "@/actions/uploadActions";
 
 function UploadForm() {
   const formRef = useRef();
   const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  async function handleInputFiles(e){
+  async function handleInputFiles(e) {
     e.preventDefault();
-    const files = e.target.files;
-    
-    const newFiles = [...files].filter(file => {
-      if(file.size < 1024*1024 && file.type.startsWith('image/')){
+
+    // Check if the total files exceed 3
+    if (files.length >= 3) {
+      toast.error("You can only upload up to 3 images! ❌");
+      return;
+    }
+
+    const newFiles = [...e.target.files].filter((file) => {
+      if (file.size < 1024 * 1024 && file.type.startsWith("image/")) {
         return file;
       }
-    })
+    });
 
-    setFiles(prev => [...newFiles, ...prev])
-    formRef.current.reset()
+    // Check if adding new files will exceed the limit of 3
+    if (files.length + newFiles.length > 3) {
+      toast.error("Uploading these files would exceed the 3-image limit. ❌");
+      return;
+    }
+
+    setFiles((prev) => [...prev, ...newFiles]);
+    formRef.current.reset();
   }
 
   async function handleDeleteFile(index) {
-    const newFiles = files.filter((_, i) => i !== index)
-    setFiles(newFiles)
+    const newFiles = files.filter((_, i) => i !== index);
+    setFiles(newFiles);
+  }
+
+  async function handleUpload(e) {
+    e.preventDefault();
+    setLoading(true);
+    if (!files.length) return toast.error("No image files are selected! ❌");
+
+    const formData = new FormData();
+
+    files.forEach(file => {
+      formData.append('files', file)
+    })
+
+    const res = await uploadPhoto(formData)
+    toast.success("Image uploaded successfully! ✌")
+
+    setLoading(false); // Set loading to false after the upload completes
   }
 
   return (
     <form
-      action=""
+      onSubmit={handleUpload}
       ref={formRef}
       className="bg-white p-16 rounded-xl shadow-lg max-w-[600px]"
     >
@@ -53,25 +85,28 @@ function UploadForm() {
               ></path>
             </svg>
           </div>
+          {!loading && (
+            <h5 className="text-xs text-orange-700 mt-2">
+              (*) Only accepts image files less than 1mb in size. Up to 3 photo
+              files.
+            </h5>
+          )}
 
-          <h5 className="text-xs text-orange-700 mt-2">
-            (*) Only accepts image files less than 1mb in size. Up to 3 photo
-            files.
-          </h5>
           {/* Preview Images */}
-          <div className='grid grid-cols-3 gap-3'>
+          <div className="grid grid-cols-3 gap-3">
             {files.map((file, index) => (
-              <PhotoCard 
-                key={index} 
-                url={URL.createObjectURL(file)} 
+              <PhotoCard
+                key={index}
+                url={URL.createObjectURL(file)}
                 onClick={() => handleDeleteFile(index)}
               />
             ))}
           </div>
         </div>
       </div>
+      <ButtonSubmit value="Upload to Cloudinary" loading={loading} />
     </form>
   );
 }
 
-export default UploadForm
+export default UploadForm;
