@@ -4,6 +4,7 @@ import fs from "fs/promises"
 import { v4 as uuidv4 } from "uuid"
 import os from "os";
 import cloudinary from "cloudinary";
+import { revalidatePath } from "next/cache";
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -53,7 +54,11 @@ export async function uploadPhoto(formData) {
 
         const photos = await uploadPhotosToCloudinary(newFiles)
 
-        console.log(photos);
+        newFiles.map(file => fs.unlink(file.filepath))
+
+        revalidatePath("/")
+        return { msg: "Uploaded Successfully!"}
+
     } catch (error) {
         return { errMsg: error.message }
     }
