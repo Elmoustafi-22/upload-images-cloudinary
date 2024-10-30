@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid"
 import os from "os";
 import cloudinary from "cloudinary";
 import { revalidatePath } from "next/cache";
+import Photo from "@/models/photoModel";
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -48,7 +49,12 @@ async function uploadPhotosToCloudinary(newFiles){
     return await Promise.all(multiplePhotosPromise)
 }
 
+const delay = (delayInms) => {
+    return new Promise(resolve => setTimeout(resolve, delayInms));
+}
+
 export async function uploadPhoto(formData) {
+
     try {
         const newFiles = await savePhotosToLocal(formData);
 
@@ -56,10 +62,57 @@ export async function uploadPhoto(formData) {
 
         newFiles.map(file => fs.unlink(file.filepath))
 
-        revalidatePath("/")
+        // await delay(2000)
+
+        // revalidatePath("/")
+
+        const newPhotos = photos.map(photo => {
+          const newPhoto = new Photo({
+            public_id: photo.public_id,
+            secure_url: photo.secure_url,
+          })
+          return newPhoto;
+        })
+
+        await Photo.insertMany(newPhotos)
+
         return { msg: "Uploaded Successfully!"}
 
     } catch (error) {
         return { errMsg: error.message }
     }
+
+}
+
+export async function getAllPhotos() {
+  try {
+    // const {resources} = await cloudinary.v2.search.expression(
+    //   "folder:upload-images/*"
+    // ).sort_by('created_at', 'desc').max_results(500).execute()
+
+    const photos = await Photo.find().sort('createdAt');
+    const resources = photos.map(photo => ({...photo._doc, _id: photo._id.toString() }))
+ 
+    return resources|| [] ;
+  } catch (error) {
+    return { errMsg: error.message };
+  }
+}
+       
+export async function revalidate(path) {
+    revalidatePath(path)
+} 
+
+export async function deletePhoto(public_id) {
+  try {
+    await Promise.all([
+      Photo.findOneAndDelete({public_id}),
+      cloudinary.v2.uploader.destroy(public_id),
+    ])
+
+    revalidatePath("/")
+    return { msg: 'Delete Success!' };
+  } catch (error) {
+    return { errMsg: error.message };
+  }
 }

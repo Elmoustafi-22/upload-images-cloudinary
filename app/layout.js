@@ -1,6 +1,9 @@
 import "./globals.css";
 import { Montserrat } from "next/font/google"
 import { Toaster } from "react-hot-toast";
+import connectDB from "@/utils/database";
+
+connectDB();
 
 const montserrat = Montserrat({subsets: ["latin"], weight: "400"})
 

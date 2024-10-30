@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useTransition } from 'react';
 
 const PhotoCard = ({ url, onClick }) => {
+  const [isPending, startTransition] = useTransition();
   return (
     <div className="flex flex-col gap-2">
       <div>
-        <div className=" flex p-2 border-2 border-stone-400 rounded-md mt-2 cursor-pointer">
+        <div className=" flex p-2 border hover:shadow-2xl border-slate-400 rounded-md mt-2 cursor-pointer bg-white">
           <img
             src={url}
             className="transition-transform duration-300 ease-in-out transform hover:scale-110 rounded h-28 object-cover w-full"
@@ -14,13 +15,14 @@ const PhotoCard = ({ url, onClick }) => {
       <div>
         <button
           type="button"
-          onClick={onClick}
+          onClick={() => startTransition(onClick)}
+          disabled={isPending}
           className="p-1 text-md bg-orange-600 text-center w-full flex 
             items-center gap-1 justify-center text-slate-200
-            rounded-md hover:bg-white transition duration-300 hover:border hover:border-orange-600
+            rounded-md hover:bg-slate-100 transition duration-300 hover:border hover:border-orange-600
             hover:text-orange-600"
         >
-          Delete
+          {isPending ? "loading.." : "Delete"}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"

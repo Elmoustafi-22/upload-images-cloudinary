@@ -1,12 +1,12 @@
 import "./globals.css"
-import UploadForm from "@/components/UploadForm"
 import React from "react"
+import UploadPage from "@/components/UploadPage"
 
-export default function Home() {
+export default async function Home() {
   return (
     <div className="flex flex-col mx-auto justify-center
-      items-center h-screen">
-      <UploadForm />
+      items-center">
+      <UploadPage />
     </div>
   )
 }
